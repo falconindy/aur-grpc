@@ -1,0 +1,4 @@
+aur_sourcedb/
+build/
+db/
+subprojects/*/

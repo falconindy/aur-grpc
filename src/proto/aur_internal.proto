@@ -1,0 +1,158 @@
+syntax = "proto3";
+
+package aur_internal;
+
+import "google/protobuf/field_mask.proto";
+
+message Package {
+  string name = 1;
+  string pkgbase = 2;
+  string pkgver = 3;
+  string pkgrel = 4;
+  string description = 5;
+  string url = 6;
+  int32 votes = 7;
+  double popularity = 8;
+
+  repeated string architectures = 100;
+  repeated string maintainers = 101;
+
+  repeated string conflicts = 200;
+  repeated string groups = 201;
+  repeated string keywords = 202;
+  repeated string licenses = 203;
+  repeated string optdepends = 204;
+
+  // These may be "depstrings", suitable for passing back to a "Resolve" RPC
+  // request.
+  repeated string provides = 205;
+  repeated string replaces = 206;
+  repeated string depends = 300;
+  repeated string makedepends = 301;
+  repeated string checkdepends = 302;
+
+  // Timestamps in Unix seconds. A value of 0 indicates the "unknown" time point.
+  int64 out_of_date = 400;
+  int64 submitted = 401;
+  int64 modified = 402;
+}
+
+message RequestOptions {
+  // Apply the given field mask to select a subset of the fields available in
+  // any given RPC response that includes Package objects. By default, all
+  // available fields are returned, but a given RPC method may constrain the
+  // list of fields it will make available.
+  google.protobuf.FieldMask package_field_mask = 1;
+}
+
+message LookupRequest {
+  enum LookupBy {
+    // Should never be encountered in the internal API.
+    LOOKUPBY_UNKNOWN = 0;
+
+    // Find packages that have the given name.
+    LOOKUPBY_NAME = 1;
+
+    // Find packages that have the given pkgbase.
+    LOOKUPBY_PKGBASE = 2;
+
+    // Find packages that have the given maintainer.
+    LOOKUPBY_MAINTAINER = 3;
+
+    // Find packages that have the given depends.
+    LOOKUPBY_DEPENDS = 4;
+
+    // Find packages that have the given makedepends.
+    LOOKUPBY_MAKEDEPENDS = 5;
+
+    // Find packages that have the given optdepends.
+    LOOKUPBY_OPTDEPENDS = 6;
+
+    // Find packages that have the given checkdepends.
+    LOOKUPBY_CHECKDEPENDS = 7;
+  }
+
+  RequestOptions options = 1;
+
+  // Keys to lookup. The nature of the results depends on the value of the
+  // lookup_by field.
+  repeated string names = 2;
+
+  // Specifies which package attribute the "names" field should be matched
+  // against. Versioned APIs define their own defaults.
+  LookupBy lookup_by = 3;
+}
+
+message LookupResponse {
+  repeated Package packages = 1;
+
+  // Inputs from the LookupRequest that yielded no results.
+  repeated string not_found_names = 2;
+}
+
+message SearchRequest {
+  enum SearchBy {
+    SEARCHBY_UNKNOWN = 0;
+    SEARCHBY_NAME_DESC = 1;
+    SEARCHBY_NAME = 2;
+  }
+
+  enum SearchLogic {
+    SEARCHLOGIC_UNKNOWN = 0;
+    SEARCHLOGIC_CONJUNCTIVE = 1;
+    SEARCHLOGIC_DISJUNCTIVE = 2;
+  }
+
+  RequestOptions options = 1;
+
+  // One to many search terms to request lightweight metadata for. Behavior of
+  // search results is further constrained by the search_by and search_logic
+  // fields. Each of the terms is considered to be a shell-like glob pattern.
+  // Only * and ? are supported as wildcards, and patterns are implicitly
+  // anchored (e.g. if you want to match packages ending with "-git", you
+  // should specify "*-git".
+  repeated string terms = 2;
+
+  // Search by the given corpus. Versioned APIs define their own defaults.
+  SearchBy search_by = 3;
+
+  // Apply the given set logic to the search result. In no case will search
+  // results ever be non-unique. Only applies to SEARCHBY_NAME and
+  // SEARCHBY_NAME_DESC methods of searching. Versioned APIs define their own
+  // defaults.
+  SearchLogic search_logic = 4;
+}
+
+message SearchResponse {
+  // Contents of these packages will only contain a subset of the full package
+  // information: name, pkgver, pkgrel, description, votes, popularity, maintainers.
+  repeated Package packages = 1;
+}
+
+message ResolveRequest {
+  RequestOptions options = 1;
+
+  // The dependency requirement. Should be a dependency string such as:
+  //   foopkg
+  //   foopkg>=6.0
+  //   foopkg<6.0
+  //   foopkg=6.0
+  // A missing comparator and version indicates that any version of the given
+  // dependency can satisfy the request.
+  repeated string depstrings = 2;
+}
+
+message ResolveResponse {
+  message ResolvedPackage {
+    // The input depstring that corresponds to this result.
+    string depstring = 1;
+
+    // Zero to many providers for the given dependency. An empty provider list
+    // indicates that the dependency could not be satisfied. The implementation
+    // attempts to ensure that the first match in this list is the "best"
+    // option (e.g. an exact match by package name).
+    repeated Package providers = 2;
+  }
+
+  repeated ResolvedPackage resolved_packages = 1;
+}

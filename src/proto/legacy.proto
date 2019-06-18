@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package aur_legacy;
+
+// Protobuf representations of the v5 API of aur.archlinux.org.
+
+message Package {
+  int64 ID = 1;
+  string Name = 2;
+  int64 PackageBaseID = 3;
+  string PackageBase = 4;
+  string Version = 5;
+  string Description = 6;
+  string URL = 7;
+  int64 NumVotes = 8;
+  double Popularity = 9;
+  int64 OutOfDate = 10;
+  string Maintainer = 11;
+  int64 FirstSubmitted = 12;
+  int64 LastModified = 13;
+  string URLPath = 14;
+  repeated string Depends = 15;
+  repeated string MakeDepends = 16;
+  repeated string CheckDepends = 17;
+  repeated string OptDepends = 18;
+  repeated string License = 19;
+  repeated string Keywords = 20;
+  repeated string Provides = 21;
+  repeated string Replaces = 22;
+  repeated string Conflicts = 23;
+  repeated string Groups = 24;
+}
+
+message Response {
+  int64 version = 1;
+  string type = 2;
+  int64 resultcount = 3;
+  repeated Package results = 4;
+  string error = 5;
+}
