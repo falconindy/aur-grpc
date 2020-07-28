@@ -84,7 +84,6 @@ class ServiceImplTest : public testing::Test {
       p.set_description("pacman database extraction utility");
       p.set_pkgbase("expac");
       p.set_pkgver("10.1");
-      p.set_pkgrel("1");
       p.add_provides("expac=10");
       p.add_architectures("x86_64");
       AddPackage(p);
@@ -247,7 +246,7 @@ TEST_F(ServiceImplTest, SearchWithFieldMask) {
   request.add_terms("expac-*");
 
   std::vector<std::string> expected_fields{"name", "description", "pkgbase",
-                                           "pkgver", "pkgrel"};
+                                           "pkgver"};
 
   auto mask = request.mutable_options()->mutable_package_field_mask();
   for (const auto& field : expected_fields) {

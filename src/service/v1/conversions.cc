@@ -15,7 +15,6 @@ Package ToV1Package(aur_internal::Package package) {
   v1.set_allocated_name(package.release_name());
   v1.set_allocated_pkgbase(package.release_pkgbase());
   v1.set_allocated_pkgver(package.release_pkgver());
-  v1.set_allocated_pkgrel(package.release_pkgrel());
   v1.set_allocated_description(package.release_description());
   v1.set_allocated_url(package.release_url());
   v1.set_votes(package.votes());

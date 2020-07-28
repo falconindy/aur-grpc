@@ -8,11 +8,10 @@ message Package {
   string name = 1;
   string pkgbase = 2;
   string pkgver = 3;
-  string pkgrel = 4;
-  string description = 5;
-  string url = 6;
-  int32 votes = 7;
-  double popularity = 8;
+  string description = 4;
+  string url = 5;
+  int32 votes = 6;
+  double popularity = 7;
 
   repeated string architectures = 100;
   repeated string maintainers = 101;
@@ -123,8 +122,8 @@ message SearchRequest {
 }
 
 message SearchResponse {
-  // Contents of these packages will only contain a subset of the full package
-  // information: name, pkgver, pkgrel, description, votes, popularity, maintainers.
+  // Contents of these packages will only contain names unless a FieldMask was
+  // provided in the SearchRequest.
   repeated Package packages = 1;
 }
 
