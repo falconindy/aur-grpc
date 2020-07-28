@@ -108,7 +108,6 @@ grpc::Status ServiceImpl::Lookup(const LookupRequest& request,
   const auto db = snapshot_db();
 
   switch (request.lookup_by()) {
-    case LookupRequest::LOOKUPBY_UNKNOWN:
     case LookupRequest::LOOKUPBY_NAME:
       LookupByIndex(db->idx_pkgname(), request, response);
       break;
@@ -148,7 +147,6 @@ grpc::Status ServiceImpl::SearchByPredicate(
   absl::flat_hash_set<const Package*> results;
 
   switch (request.search_logic()) {
-    case SearchRequest::SEARCHLOGIC_UNKNOWN:
     case SearchRequest::SEARCHLOGIC_DISJUNCTIVE:
       for (const auto& package : db->packages()) {
         if (absl::c_any_of(request.terms(), [&](const std::string& term) {
@@ -187,7 +185,6 @@ grpc::Status ServiceImpl::Search(const SearchRequest& request,
   const auto db = snapshot_db();
 
   switch (request.search_by()) {
-    case SearchRequest::SEARCHBY_UNKNOWN:
     case SearchRequest::SEARCHBY_NAME_DESC:
       return SearchByPredicate(db, &SearchOneNameDesc, request, response);
     case SearchRequest::SEARCHBY_NAME:

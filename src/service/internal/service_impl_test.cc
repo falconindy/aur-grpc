@@ -136,6 +136,7 @@ TEST_F(ServiceImplTest, Lookup) {
   LookupRequest request;
   LookupResponse response;
 
+  request.set_lookup_by(LookupRequest::LOOKUPBY_NAME);
   request.add_names("expac-git");
   request.add_names("auracle-git");
   request.add_names("notfound");
@@ -155,6 +156,7 @@ TEST_F(ServiceImplTest, LookupIsCaseInsensitive) {
   LookupRequest request;
   LookupResponse response;
 
+  request.set_lookup_by(LookupRequest::LOOKUPBY_NAME);
   request.add_names("EXPAC-git");
   request.add_names("auracle-GIT");
 
@@ -173,6 +175,7 @@ TEST_F(ServiceImplTest, SearchByName) {
   SearchResponse response;
 
   request.set_search_by(SearchRequest::SEARCHBY_NAME);
+  request.set_search_logic(SearchRequest::SEARCHLOGIC_DISJUNCTIVE);
   request.add_terms("exp*");
 
   FillAllFieldsMask(request.mutable_options());
@@ -189,6 +192,7 @@ TEST_F(ServiceImplTest, SearchByNameIsCaseInsensitive) {
   SearchResponse response;
 
   request.set_search_by(SearchRequest::SEARCHBY_NAME);
+  request.set_search_logic(SearchRequest::SEARCHLOGIC_DISJUNCTIVE);
   request.add_terms("eXP*");
 
   FillAllFieldsMask(request.mutable_options());
@@ -205,6 +209,7 @@ TEST_F(ServiceImplTest, SearchByNameDesc) {
   SearchResponse response;
 
   request.set_search_by(SearchRequest::SEARCHBY_NAME_DESC);
+  request.set_search_logic(SearchRequest::SEARCHLOGIC_DISJUNCTIVE);
   request.add_terms("*PACMAN*");
 
   FillAllFieldsMask(request.mutable_options());
@@ -243,6 +248,7 @@ TEST_F(ServiceImplTest, SearchWithFieldMask) {
   SearchResponse response;
 
   request.set_search_by(SearchRequest::SEARCHBY_NAME);
+  request.set_search_logic(SearchRequest::SEARCHLOGIC_DISJUNCTIVE);
   request.add_terms("expac-*");
 
   std::vector<std::string> expected_fields{"name", "description", "pkgbase",
