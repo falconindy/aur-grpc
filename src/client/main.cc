@@ -29,6 +29,7 @@
 
 // Look, I don't know. This would be a whole lot better if we could just use
 // absl methods, but we can't. We just can't. No more questions.
+// https://github.com/grpc/grpc/issues/23640
 std::string MakeEnumName(const std::string& prefix, const std::string& suffix) {
   std::string out = prefix;
 
