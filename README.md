@@ -16,10 +16,11 @@ satisfy some long-standing feature requests against the AUR:
   moved to the Lookup method. This is the sensible thing to do for the
   depends-like searches where there's no actual searching, but only exact
   matching.
+* `Lookup` responses indicate which input names yielded no packages.
 * The `Search` method supports simple pattern matching with shell-style globs,
   e.g. "\*-git" or "python-\*". As a consequence of this, search terms are now
-  implcitly anchored. Searching for "auracle" won't get you what you want
-  auracle-git.
+  implcitly anchored. Searching for "auracle" won't get you what you want (i.e.
+  auracle-git).
 * All methods support field masks in order to reduce the amount of data the AUR
   gives you back. For example, if you only want name and pkgver, you can ask
   for just those fields. I suspect this should be a "requirement" or else you
