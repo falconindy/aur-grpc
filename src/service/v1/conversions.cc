@@ -86,7 +86,7 @@ ResolveResponse ToV1Response(aur_internal::ResolveResponse response) {
   return v1;
 }
 
-aur_internal::SearchRequest ToInternal(const SearchRequest& request) {
+aur_internal::SearchRequest ToInternalRequest(const SearchRequest& request) {
   aur_internal::SearchRequest internal;
 
   if (request.options().has_package_field_mask()) {
@@ -137,7 +137,7 @@ aur_internal::SearchRequest ToInternal(const SearchRequest& request) {
   return internal;
 }
 
-aur_internal::LookupRequest ToInternal(const LookupRequest& request) {
+aur_internal::LookupRequest ToInternalRequest(const LookupRequest& request) {
   aur_internal::LookupRequest internal;
 
   if (request.options().has_package_field_mask()) {
@@ -186,7 +186,7 @@ aur_internal::LookupRequest ToInternal(const LookupRequest& request) {
   return internal;
 }
 
-aur_internal::ResolveRequest ToInternal(const ResolveRequest& request) {
+aur_internal::ResolveRequest ToInternalRequest(const ResolveRequest& request) {
   aur_internal::ResolveRequest internal;
 
   if (request.options().has_package_field_mask()) {
