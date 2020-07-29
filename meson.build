@@ -157,12 +157,10 @@ server = executable(
   dependencies : [
     aur_v1_proto,
     aur_internal_proto,
+    libgrpcpp_reflection,
     libsystemd,
     service_v1,
     storage,
-    # Ordered last to avoid leaking -Wl,--no-as-needed to other dependencies.
-    # https://github.com/mesonbuild/meson/issues/7419
-    libgrpcpp_reflection,
   ])
 
 client = executable(
