@@ -5,7 +5,6 @@
 #include <vector>
 
 #include "absl/container/flat_hash_map.h"
-#include "absl/container/node_hash_map.h"
 #include "aur_internal.pb.h"
 #include "google/protobuf/repeated_field.h"
 
@@ -49,7 +48,7 @@ class PackageIndex final {
   const std::vector<const Package*>& Get(const std::string& key) const;
 
  private:
-  using index_type =
+  using container_type =
       absl::flat_hash_map<std::string, std::vector<const Package*>>;
 
   class Builder {
@@ -75,18 +74,18 @@ class PackageIndex final {
     void AddEntry(const std::string& key, const Package* value);
 
     const SecondaryValueFn getter_;
-    index_type index_;
+    container_type index_;
   };
 
   // Private constructor. PackageIndex objects must be created through the
   // static Create method.
-  explicit PackageIndex(const std::string& index_name, index_type index)
+  explicit PackageIndex(const std::string& index_name, container_type index)
       : name_(index_name), index_(std::move(index)) {}
 
-  inline static const index_type::value_type::second_type empty_value_;
+  inline static const container_type::value_type::second_type empty_value_;
 
   std::string name_;
-  index_type index_;
+  container_type index_;
 };
 
 // Helpers for creating SecondaryValueFn objects.
