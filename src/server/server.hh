@@ -31,8 +31,7 @@ class Server {
   std::unique_ptr<grpc::Server> server_;
 
   sd_event* event_;
-  sd_event_source* sigterm_event_;
-  sd_event_source* sighup_event_;
+  std::vector<sd_event_source*> signal_events_;
 };
 
 };  // namespace aur

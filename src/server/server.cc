@@ -12,23 +12,27 @@ Server::Server(const std::string& listen_address)
 }
 
 Server::~Server() {
-  sd_event_source_unref(sigterm_event_);
-  sd_event_source_unref(sighup_event_);
+  for (auto* signal_event : signal_events_) {
+    sd_event_source_unref(signal_event);
+  }
   sd_event_unref(event_);
 }
 
 void Server::Run() {
   sigset_t ss{};
   sigaddset(&ss, SIGHUP);
+  sigaddset(&ss, SIGINT);
   sigaddset(&ss, SIGTERM);
   sigprocmask(SIG_BLOCK, &ss, nullptr);
 
   sd_event_default(&event_);
 
-  sd_event_add_signal(event_, &sigterm_event_, SIGTERM, &Server::HandleSignal,
-                      this);
-  sd_event_add_signal(event_, &sighup_event_, SIGHUP, &Server::HandleSignal,
-                      this);
+  sd_event_add_signal(event_, &signal_events_.emplace_back(), SIGINT,
+                      &Server::HandleSignal, this);
+  sd_event_add_signal(event_, &signal_events_.emplace_back(), SIGTERM,
+                      &Server::HandleSignal, this);
+  sd_event_add_signal(event_, &signal_events_.emplace_back(), SIGHUP,
+                      &Server::HandleSignal, this);
 
   server_ = builder_.BuildAndStart();
   printf("ready to serve on %s\n", listen_address_.c_str());
@@ -46,6 +50,8 @@ int Server::HandleSignal(sd_event_source*, const struct signalfd_siginfo* si,
       server->service_impl_.Reload();
       break;
     case SIGTERM:
+    case SIGINT:
+      printf("shutting down...\n");
       server->server_->Shutdown();
       sd_event_exit(server->event_, 0);
       break;
