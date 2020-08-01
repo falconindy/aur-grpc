@@ -6,6 +6,8 @@
 #include "client/client.hh"
 #include "google/protobuf/util/field_mask_util.h"
 
+namespace {
+
 [[noreturn]] void usage() {
   printf("%s [-a server_address] command args...\n",
          program_invocation_short_name);
@@ -40,6 +42,8 @@ std::string MakeEnumName(const std::string& prefix, const std::string& suffix) {
   return out;
 }
 
+}  // namespace
+
 int main(int argc, char** argv) {
   const char* server_address = "localhost:9000";
   aur::v1::AurClient::CallOptions call_options;
@@ -51,8 +55,11 @@ int main(int argc, char** argv) {
         server_address = optarg;
         break;
       case 'l':
-        aur::v1::LookupRequest::LookupBy_Parse(
-            MakeEnumName("LOOKUPBY_", optarg), &call_options.lookup_by);
+        if (!aur::v1::LookupRequest::LookupBy_Parse(
+                MakeEnumName("LOOKUPBY_", optarg), &call_options.lookup_by)) {
+          fprintf(stderr, "error: invalid lookup by: %s\n", optarg);
+          return 1;
+        }
         break;
       case 'h':
         usage();
@@ -61,12 +68,19 @@ int main(int argc, char** argv) {
             optarg, &call_options.field_mask);
         break;
       case 'o':
-        aur::v1::SearchRequest::SearchLogic_Parse(
-            MakeEnumName("SEARCHLOGIC_", optarg), &call_options.search_logic);
+        if (!aur::v1::SearchRequest::SearchLogic_Parse(
+                MakeEnumName("SEARCHLOGIC_", optarg),
+                &call_options.search_logic)) {
+          fprintf(stderr, "error: invalid search logic: %s\n", optarg);
+          return 1;
+        }
         break;
       case 's':
-        aur::v1::SearchRequest::SearchBy_Parse(
-            MakeEnumName("SEARCHBY_", optarg), &call_options.search_by);
+        if (!aur::v1::SearchRequest::SearchBy_Parse(
+                MakeEnumName("SEARCHBY_", optarg), &call_options.search_by)) {
+          fprintf(stderr, "error: invalid search by: %s\n", optarg);
+          return 1;
+        }
         break;
       case '?':
         exit(1);
