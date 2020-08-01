@@ -57,17 +57,23 @@ message LookupRequest {
     // Find packages that have the given maintainer.
     LOOKUPBY_MAINTAINER = 3;
 
+    // Find packages that have the given group.
+    LOOKUPBY_GROUP = 4;
+
+    // Find packages that have the given keyword.
+    LOOKUPBY_KEYWORD = 5;
+
     // Find packages that have the given depends.
-    LOOKUPBY_DEPENDS = 4;
+    LOOKUPBY_DEPENDS = 6;
 
     // Find packages that have the given makedepends.
-    LOOKUPBY_MAKEDEPENDS = 5;
+    LOOKUPBY_MAKEDEPENDS = 7;
 
     // Find packages that have the given optdepends.
-    LOOKUPBY_OPTDEPENDS = 6;
+    LOOKUPBY_OPTDEPENDS = 8;
 
     // Find packages that have the given checkdepends.
-    LOOKUPBY_CHECKDEPENDS = 7;
+    LOOKUPBY_CHECKDEPENDS = 9;
   }
 
   RequestOptions options = 1;

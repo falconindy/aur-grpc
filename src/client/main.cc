@@ -21,7 +21,8 @@ namespace {
       "Options\n"
       "  -m MASK            a list of fields, comma-delimited, to mask in response\n"
       "  -l LOOKUP_BY       lookup by the given field (name, pkgbase, maintainer,\n"
-      "                         depends, makedepends, checkdepends, optdepends)\n"
+      "                         group, keyword, depends, makedepends, checkdepends,\n"
+      "                         optdepends)\n"
       "  -s SEARCH_BY       search by given corpus (name, name_desc)\n"
       "  -o LOGIC           search using given set logic (disjunctive, conjunctive)\n"
       "\n");

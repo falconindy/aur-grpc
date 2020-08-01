@@ -51,6 +51,8 @@ class ServiceImpl final {
     const PackageIndex& idx_pkgname() const { return idx_pkgname_; }
     const PackageIndex& idx_pkgbase() const { return idx_pkgbase_; }
     const PackageIndex& idx_maintainers() const { return idx_maintainers_; }
+    const PackageIndex& idx_groups() const { return idx_groups_; }
+    const PackageIndex& idx_keywords() const { return idx_keywords_; }
     const PackageIndex& idx_provides() const { return idx_provides_; }
     const PackageIndex& idx_depends() const { return idx_depends_; }
     const PackageIndex& idx_optdepends() const { return idx_optdepends_; }
@@ -63,6 +65,8 @@ class ServiceImpl final {
     PackageIndex idx_pkgname_;
     PackageIndex idx_pkgbase_;
     PackageIndex idx_maintainers_;
+    PackageIndex idx_groups_;
+    PackageIndex idx_keywords_;
     PackageIndex idx_provides_;
     PackageIndex idx_depends_;
     PackageIndex idx_optdepends_;

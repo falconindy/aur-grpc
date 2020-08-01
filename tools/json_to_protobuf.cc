@@ -42,6 +42,7 @@ aur_internal::Package LegacyToInternalPackage(
   absl::c_copy(legacy.license(), inserter(package.mutable_licenses()));
   absl::c_copy(legacy.conflicts(), inserter(package.mutable_conflicts()));
   absl::c_copy(legacy.groups(), inserter(package.mutable_groups()));
+  absl::c_copy(legacy.keywords(), inserter(package.mutable_keywords()));
 
   return package;
 }

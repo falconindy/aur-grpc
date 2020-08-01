@@ -107,6 +107,8 @@ grpc::Status ServiceImpl::Lookup(const LookupRequest& request,
                                  LookupResponse* response) const {
   const auto db = snapshot_db();
 
+  printf("%s\n", request.ShortDebugString().c_str());
+
   switch (request.lookup_by()) {
     case LookupRequest::LOOKUPBY_NAME:
       LookupByIndex(db->idx_pkgname(), request, response);
@@ -116,6 +118,12 @@ grpc::Status ServiceImpl::Lookup(const LookupRequest& request,
       break;
     case LookupRequest::LOOKUPBY_MAINTAINER:
       LookupByIndex(db->idx_maintainers(), request, response);
+      break;
+    case LookupRequest::LOOKUPBY_GROUP:
+      LookupByIndex(db->idx_groups(), request, response);
+      break;
+    case LookupRequest::LOOKUPBY_KEYWORD:
+      LookupByIndex(db->idx_keywords(), request, response);
       break;
     case LookupRequest::LOOKUPBY_CHECKDEPENDS:
       LookupByIndex(db->idx_checkdepends(), request, response);
@@ -283,6 +291,15 @@ ServiceImpl::InMemoryDB::InMemoryDB(const aur_storage::Storage* storage) {
   idx_maintainers_ = PackageIndex::Create(
       packages_, "maintainers",
       PackageIndex::RepeatedFieldIndexingAdapter(&Package::maintainers));
+  idx_provides_ = PackageIndex::Create(
+      packages_, "provides",
+      PackageIndex::DepstringFieldIndexingAdapter(&Package::provides));
+  idx_groups_ = PackageIndex::Create(
+      packages_, "groups",
+      PackageIndex::RepeatedFieldIndexingAdapter(&Package::groups));
+  idx_keywords_ = PackageIndex::Create(
+      packages_, "keywords",
+      PackageIndex::RepeatedFieldIndexingAdapter(&Package::keywords));
   idx_provides_ = PackageIndex::Create(
       packages_, "provides",
       PackageIndex::DepstringFieldIndexingAdapter(&Package::provides));

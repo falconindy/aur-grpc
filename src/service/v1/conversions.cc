@@ -164,6 +164,12 @@ aur_internal::LookupRequest ToInternalRequest(const LookupRequest& request) {
     case LookupRequest::LOOKUPBY_MAINTAINER:
       internal.set_lookup_by(aur_internal::LookupRequest::LOOKUPBY_MAINTAINER);
       break;
+    case LookupRequest::LOOKUPBY_GROUP:
+      internal.set_lookup_by(aur_internal::LookupRequest::LOOKUPBY_GROUP);
+      break;
+    case LookupRequest::LOOKUPBY_KEYWORD:
+      internal.set_lookup_by(aur_internal::LookupRequest::LOOKUPBY_KEYWORD);
+      break;
     case LookupRequest::LOOKUPBY_DEPENDS:
       internal.set_lookup_by(aur_internal::LookupRequest::LOOKUPBY_DEPENDS);
       break;
