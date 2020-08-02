@@ -253,21 +253,16 @@ std::shared_ptr<const ServiceImpl::InMemoryDB> ServiceImpl::snapshot_db()
   return db_;
 }
 
-ServiceImpl::InMemoryDB::InMemoryDB(const aur_storage::Storage* storage) {
-  absl::Time start;
+void ServiceImpl::InMemoryDB::LoadPackages(
+    const aur_storage::Storage* storage) {
+  const absl::Time start = absl::Now();
 
-  start = absl::Now();
   const std::vector<std::string> names = storage->List("*");
   packages_.reserve(names.size());
   for (const auto& name : names) {
     std::string s;
-    if (!storage->Get(name, &s)) {
-      // Unlikely
-      continue;
-    }
-
     Package p;
-    if (!p.ParseFromString(s)) {
+    if (!storage->Get(name, &s) || !p.ParseFromString(s)) {
       // Unlikely
       continue;
     }
@@ -275,12 +270,13 @@ ServiceImpl::InMemoryDB::InMemoryDB(const aur_storage::Storage* storage) {
     packages_.push_back(std::move(p));
   }
 
-  auto load_time = absl::Now() - start;
-
+  const absl::Duration load_time = absl::Now() - start;
   printf("caching complete in %s. %zd packages loaded.\n",
          absl::FormatDuration(load_time).c_str(), packages_.size());
+}
 
-  start = absl::Now();
+void ServiceImpl::InMemoryDB::BuildIndexes() {
+  const absl::Time start = absl::Now();
 
   idx_pkgname_ = PackageIndex::Create(
       packages_, "pkgname",
@@ -316,6 +312,7 @@ ServiceImpl::InMemoryDB::InMemoryDB(const aur_storage::Storage* storage) {
       packages_, "checkdepends",
       PackageIndex::DepstringFieldIndexingAdapter(&Package::checkdepends));
 
+  const absl::Duration load_time = absl::Now() - start;
   printf("index building complete in %s.\n",
          absl::FormatDuration(load_time).c_str());
 }

@@ -39,7 +39,10 @@ class ServiceImpl final {
  private:
   class InMemoryDB final {
    public:
-    explicit InMemoryDB(const aur_storage::Storage* storage);
+    explicit InMemoryDB(const aur_storage::Storage* storage) {
+      LoadPackages(storage);
+      BuildIndexes();
+    }
 
     InMemoryDB(InMemoryDB&&) = default;
     InMemoryDB& operator=(InMemoryDB&&) = default;
@@ -60,6 +63,9 @@ class ServiceImpl final {
     const PackageIndex& idx_checkdepends() const { return idx_checkdepends_; }
 
    private:
+    void LoadPackages(const aur_storage::Storage* storage);
+    void BuildIndexes();
+
     std::vector<Package> packages_;
 
     PackageIndex idx_pkgname_;
