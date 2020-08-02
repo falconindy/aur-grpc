@@ -78,10 +78,6 @@ bool ParsedDependency::SatisfiedBy(const Package& candidate) const {
         return true;
       }
     }
-
-    if (absl::c_linear_search(candidate.provides(), depstring_)) {
-      return true;
-    }
   } else {  // !version_.empty()
     // Exact match on package name and satisfied version
     if (name_ == candidate.name() && SatisfiedByVersion(candidate.pkgver())) {
