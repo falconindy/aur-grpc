@@ -1,24 +1,35 @@
 #!/bin/bash -e
 
-if ! type -P auracle &>/dev/null; then
-  echo "error: \`auracle' binary required but not found in PATH" >&2
-  exit 1
+log() {
+  printf "==> $1\n" "${@:2}"
+}
+
+DOWNLOAD=${DOWNLOAD:-1}
+
+if (( DOWNLOAD )); then
+  if ! type -P auracle &>/dev/null; then
+    echo "error: \`auracle' binary required but not found in PATH" >&2
+    exit 1
+  fi
+
+  mkdir -p db aur_sourcedb
+
+  log 'fetching packages...'
+  mapfile -t pkgs < <(curl -s https://aur.archlinux.org/packages.gz | gzip -cd | grep -v '^#')
+
+  # auracle's rawinfo output will likely be multiple result objects due to
+  # request size limitations of the AUR. It might be nice if auracle were to
+  # merge this for us, but that's sort of not-the-point of the raw methods. It
+  # does give us a result-per-line though, so we can just split on that.
+  auracle rawinfo "${pkgs[@]}" |
+    split --lines=1 --suffix-length=3 - aur_sourcedb/out.
 fi
 
-mkdir -p db aur_sourcedb
-
-mapfile -t pkgs < <(curl -s https://aur.archlinux.org/packages.gz | gzip -cd | grep -v '^#')
-
-# auracle's rawinfo output will likely be multiple result objects due to
-# request size limitations of the AUR. It might be nice if auracle were to
-# merge this for us, but that's sort of not-the-point of the raw methods. It
-# does give us a result-per-line though, so we can just split on that.
-auracle rawinfo "${pkgs[@]}" |
-  split --lines=1 --suffix-length=3 - aur_sourcedb/out.
-
+log 'converting packages...'
 for f in aur_sourcedb/*; do
   build/json_to_protobuf "$f" "$PWD/db" &
 done
 wait
 
-printf 'done: %s entries added to DB\n' "${#pkgs[@]}"
+db=(db/*)
+log 'done converting %d packages' "${#db[*]}"
