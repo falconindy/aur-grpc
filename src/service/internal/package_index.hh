@@ -31,7 +31,8 @@ class PackageIndex final {
 
   static SecondaryValueFn RepeatedFieldIndexingAdapter(
       const google::protobuf::RepeatedPtrField<std::string>& (
-          Package::*repeated_field)() const);
+          Package::*repeated_field)() const,
+      bool synthesize_empty = false);
 
   static PackageIndex Create(const std::vector<Package>& packages,
                              const std::string& index_name,

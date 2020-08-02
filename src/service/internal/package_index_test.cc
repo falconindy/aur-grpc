@@ -53,6 +53,26 @@ TEST(PackageIndexTest, IndexByRepeatedFieldAdapter) {
   EXPECT_THAT(index.Get("notfound"), IsEmpty());
 }
 
+TEST(PackageIndexTest, IndexByRepeatedFieldAdapterWithSyntheticEmpty) {
+  std::vector<Package> packages;
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("auracle");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("systemd");
+    p.add_maintainers("eworm");
+  }
+
+  auto index = PackageIndex::Create(
+      packages, "maintainers",
+      PackageIndex::RepeatedFieldIndexingAdapter(&Package::maintainers, true));
+
+  EXPECT_THAT(index.Get(""),
+              UnorderedElementsAre(Property(&Package::name, "auracle")));
+}
+
 TEST(PackageIndexTest, IndexByDepstringFieldAdapter) {
   std::vector<Package> packages;
   {

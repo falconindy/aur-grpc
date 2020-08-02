@@ -70,8 +70,22 @@ PackageIndex::SecondaryValueFn PackageIndex::ScalarFieldIndexingAdapter(
 // static
 PackageIndex::SecondaryValueFn PackageIndex::RepeatedFieldIndexingAdapter(
     const google::protobuf::RepeatedPtrField<std::string>& (
-        Package::*repeated_field)() const) {
-  return [=](const Package& p) { return (p.*repeated_field)(); };
+        Package::*repeated_field)() const,
+    bool synthesize_empty) {
+  if (synthesize_empty) {
+    return [=](const Package& p) {
+      const auto& v = (p.*repeated_field)();
+      if (v.empty()) {
+        google::protobuf::RepeatedPtrField<std::string> field;
+        *field.Add() = "";
+        return field;
+      } else {
+        return v;
+      }
+    };
+  } else {
+    return [=](const Package& p) { return (p.*repeated_field)(); };
+  }
 }
 
 }  // namespace aur_internal

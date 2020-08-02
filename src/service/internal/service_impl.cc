@@ -290,7 +290,7 @@ ServiceImpl::InMemoryDB::InMemoryDB(const aur_storage::Storage* storage) {
       PackageIndex::ScalarFieldIndexingAdapter(&Package::pkgbase));
   idx_maintainers_ = PackageIndex::Create(
       packages_, "maintainers",
-      PackageIndex::RepeatedFieldIndexingAdapter(&Package::maintainers));
+      PackageIndex::RepeatedFieldIndexingAdapter(&Package::maintainers, true));
   idx_provides_ = PackageIndex::Create(
       packages_, "provides",
       PackageIndex::DepstringFieldIndexingAdapter(&Package::provides));
