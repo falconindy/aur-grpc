@@ -80,7 +80,7 @@ class ServiceImpl final {
     PackageIndex idx_checkdepends_;
   };
 
-  std::shared_ptr<const InMemoryDB> snapshot_db() const;
+  const std::shared_ptr<const InMemoryDB> snapshot_db() const;
 
   using SearchPredicate =
       std::function<bool(const Package&, const std::string&)>;

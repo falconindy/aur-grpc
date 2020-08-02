@@ -247,7 +247,7 @@ grpc::Status ServiceImpl::Resolve(const ResolveRequest& request,
   return grpc::Status::OK;
 }
 
-std::shared_ptr<const ServiceImpl::InMemoryDB> ServiceImpl::snapshot_db()
+const std::shared_ptr<const ServiceImpl::InMemoryDB> ServiceImpl::snapshot_db()
     const {
   absl::ReaderMutexLock l(&mutex_);
   return db_;

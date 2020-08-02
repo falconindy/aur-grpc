@@ -8,7 +8,7 @@ namespace aur::v1 {
 
 class AurService final : public Aur::Service {
  public:
-  explicit AurService(aur_internal::ServiceImpl* impl) : impl_(impl) {}
+  explicit AurService(const aur_internal::ServiceImpl* impl) : impl_(impl) {}
 
   AurService(const AurService&) = delete;
   AurService& operator=(const AurService&) = delete;
