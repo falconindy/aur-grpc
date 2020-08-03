@@ -13,9 +13,9 @@ void Invoke(Aur::Stub* service,
   ResponseT response;
   auto status = (service->*method)(&ctx, request, &response);
   if (status.ok()) {
-    printf("%s\n", response.DebugString().c_str());
+    std::cout << response.DebugString() << '\n';
   } else {
-    printf("rpc failed: %s\n", status.error_message().c_str());
+    std::cerr << "rpc failed: " << status.error_message() << '\n';
   }
 }
 

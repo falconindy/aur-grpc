@@ -1,9 +1,11 @@
 #include <getopt.h>
 
+#include <iostream>
+
 #include "server/server.hh"
 
 [[noreturn]] void usage() {
-  printf("%s [-l listen_address]\n", program_invocation_short_name);
+  std::cout << program_invocation_short_name << "[-l listen_address]\n";
   exit(0);
 }
 

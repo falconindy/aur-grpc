@@ -2,6 +2,8 @@
 
 #include <fnmatch.h>
 
+#include <iostream>
+
 #include "absl/algorithm/container.h"
 #include "absl/strings/match.h"
 #include "absl/time/time.h"
@@ -106,8 +108,6 @@ void ServiceImpl::Reload() {
 grpc::Status ServiceImpl::Lookup(const LookupRequest& request,
                                  LookupResponse* response) const {
   const auto db = snapshot_db();
-
-  printf("%s\n", request.ShortDebugString().c_str());
 
   switch (request.lookup_by()) {
     case LookupRequest::LOOKUPBY_NAME:
@@ -264,6 +264,7 @@ void ServiceImpl::InMemoryDB::LoadPackages(
     Package p;
     if (!storage->Get(name, &s) || !p.ParseFromString(s)) {
       // Unlikely
+      std::cerr << "error: failed to load package: " << name << '\n';
       continue;
     }
 
@@ -271,8 +272,8 @@ void ServiceImpl::InMemoryDB::LoadPackages(
   }
 
   const absl::Duration load_time = absl::Now() - start;
-  printf("caching complete in %s. %zd packages loaded.\n",
-         absl::FormatDuration(load_time).c_str(), packages_.size());
+  std::cout << "caching complete in " << absl::FormatDuration(load_time) << ". "
+            << packages_.size() << " packages loaded.\n";
 }
 
 void ServiceImpl::InMemoryDB::BuildIndexes() {
@@ -313,8 +314,8 @@ void ServiceImpl::InMemoryDB::BuildIndexes() {
       PackageIndex::DepstringFieldIndexingAdapter(&Package::checkdepends));
 
   const absl::Duration load_time = absl::Now() - start;
-  printf("index building complete in %s.\n",
-         absl::FormatDuration(load_time).c_str());
+  std::cout << "index building complete in " << absl::FormatDuration(load_time)
+            << ".\n";
 }
 
 }  // namespace aur_internal

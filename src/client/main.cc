@@ -58,7 +58,7 @@ int main(int argc, char** argv) {
       case 'l':
         if (!aur::v1::LookupRequest::LookupBy_Parse(
                 MakeEnumName("LOOKUPBY_", optarg), &call_options.lookup_by)) {
-          fprintf(stderr, "error: invalid lookup by: %s\n", optarg);
+          std::cerr << "error: invalid lookup by: " << optarg << '\n';
           return 1;
         }
         break;
@@ -72,14 +72,14 @@ int main(int argc, char** argv) {
         if (!aur::v1::SearchRequest::SearchLogic_Parse(
                 MakeEnumName("SEARCHLOGIC_", optarg),
                 &call_options.search_logic)) {
-          fprintf(stderr, "error: invalid search logic: %s\n", optarg);
+          std::cerr << "error: invalid search logic: " << optarg << '\n';
           return 1;
         }
         break;
       case 's':
         if (!aur::v1::SearchRequest::SearchBy_Parse(
                 MakeEnumName("SEARCHBY_", optarg), &call_options.search_by)) {
-          fprintf(stderr, "error: invalid search by: %s\n", optarg);
+          std::cerr << "error: invalid search by: " << optarg << '\n';
           return 1;
         }
         break;
@@ -92,8 +92,8 @@ int main(int argc, char** argv) {
   argv += optind - 1;
 
   if (argc < 3) {
-    printf("not enough args\n");
-    return 42;
+    std::cerr << "error: not enough args (-h for help)\n";
+    return 1;
   }
 
   aur::v1::AurClient client(
@@ -109,7 +109,8 @@ int main(int argc, char** argv) {
   } else if (action == "resolve") {
     client.Resolve(args, call_options);
   } else {
-    printf("error: unknown action %s\n", argv[1]);
+    std::cerr << "error: unknown action " << action << '\n';
+    return 1;
   }
 
   return 0;

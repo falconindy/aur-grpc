@@ -1,5 +1,7 @@
 #include "server/server.hh"
 
+#include <iostream>
+
 #include "grpcpp/ext/proto_server_reflection_plugin.h"
 
 namespace aur {
@@ -35,7 +37,7 @@ void Server::Run() {
                       &Server::HandleSignal, this);
 
   server_ = builder_.BuildAndStart();
-  printf("ready to serve on %s\n", listen_address_.c_str());
+  std::cout << "ready to serve on " << listen_address_ << '\n';
 
   sd_event_loop(event_);
 }
@@ -51,7 +53,7 @@ int Server::HandleSignal(sd_event_source*, const struct signalfd_siginfo* si,
       break;
     case SIGTERM:
     case SIGINT:
-      printf("shutting down...\n");
+      std::cout << "shutting down...\n";
       server->server_->Shutdown();
       sd_event_exit(server->event_, 0);
       break;

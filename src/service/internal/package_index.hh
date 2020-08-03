@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -66,8 +67,8 @@ class PackageIndex final {
 
     PackageIndex Build(const std::string& index_name) {
       index_.rehash(0);
-      printf("%s index built with %zd terms\n", index_name.c_str(),
-             index_.size());
+      std::cout << index_name << " index built with " << index_.size()
+                << " terms.\n";
       return PackageIndex(index_name, std::move(index_));
     }
 
