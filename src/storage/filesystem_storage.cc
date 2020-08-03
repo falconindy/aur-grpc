@@ -16,14 +16,14 @@ namespace aur_storage {
 class Glob {
  public:
   explicit Glob(std::string_view pattern) {
-    glob_ok_ =
-        glob(std::string(pattern).c_str(), GLOB_NOCHECK, nullptr, &glob_) == 0;
-    if (glob_ok_) {
+    int r =
+        glob(std::string(pattern).c_str(), 0, nullptr, &glob_);
+    if (r == 0) {
       results_ = absl::MakeSpan(glob_.gl_pathv, glob_.gl_pathc);
     }
-  }
 
-  bool ok() const { return glob_ok_; }
+    glob_ok_ = r == 0 || r == GLOB_NOMATCH;
+  }
 
   ~Glob() {
     if (glob_ok_) {
