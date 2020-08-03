@@ -49,10 +49,12 @@ std::vector<std::string> GetAllSetFieldNames(
   return field_names;
 }
 
-void FillAllFieldsMask(aur_internal::RequestOptions* options) {
-  *options->mutable_package_field_mask() =
-      google::protobuf::util::FieldMaskUtil::GetFieldMaskForAllFields<
-          aur_internal::Package>();
+void FillFieldMask(aur_internal::RequestOptions* options,
+                   std::vector<std::string> paths) {
+  auto mask = options->mutable_package_field_mask();
+  for (const auto& p : paths) {
+    mask->add_paths(p);
+  }
 }
 
 class TemporaryDirectory {
@@ -100,7 +102,7 @@ class ServiceImplTest : public testing::Test {
   FilesystemStorage storage_{tempdir_.dirpath()};
 };
 
-TEST_F(ServiceImplTest, Lookup) {
+TEST_F(ServiceImplTest, LookupByName) {
   std::vector<Package> packages;
   {
     auto& p = packages.emplace_back();
@@ -150,8 +152,7 @@ TEST_F(ServiceImplTest, Lookup) {
   request.add_names("expac-git");
   request.add_names("auracle-git");
   request.add_names("notfound");
-
-  FillAllFieldsMask(request.mutable_options());
+  FillFieldMask(request.mutable_options(), {"name"});
 
   auto status = service->Lookup(request, &response);
   ASSERT_TRUE(status.ok()) << status.error_message();
@@ -160,6 +161,322 @@ TEST_F(ServiceImplTest, Lookup) {
   EXPECT_THAT(response.packages(),
               UnorderedElementsAre(Property(&Package::name, "expac-git"),
                                    Property(&Package::name, "auracle-git")));
+}
+
+TEST_F(ServiceImplTest, LookupByPkgbase) {
+  std::vector<Package> packages;
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pkgfile-git");
+    p.set_pkgbase("pkgfile");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pkgfile");
+    p.set_pkgbase("pacman");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pacman-extraponies-git");
+    p.set_pkgbase("pacman");
+  }
+  auto service = BuildService(packages);
+
+  LookupRequest request;
+  LookupResponse response;
+
+  request.set_lookup_by(LookupRequest::LOOKUPBY_PKGBASE);
+  request.add_names("pkgfile");
+  FillFieldMask(request.mutable_options(), {"name"});
+
+  auto status = service->Lookup(request, &response);
+  ASSERT_TRUE(status.ok()) << status.error_message();
+
+  EXPECT_THAT(response.packages(),
+              UnorderedElementsAre(Property(&Package::name, "pkgfile-git")));
+}
+
+TEST_F(ServiceImplTest, LookupByMaintainer) {
+  std::vector<Package> packages;
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pkgfile-git");
+    p.add_maintainers("falconindy");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pacman-git");
+    p.add_maintainers("falconindy");
+    p.add_maintainers("dreisner");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pacman-extraponies-git");
+    p.add_maintainers("dreisner");
+  }
+  auto service = BuildService(packages);
+
+  LookupRequest request;
+  LookupResponse response;
+
+  request.set_lookup_by(LookupRequest::LOOKUPBY_MAINTAINER);
+  request.add_names("falconindy");
+  FillFieldMask(request.mutable_options(), {"name", "maintainers"});
+
+  auto status = service->Lookup(request, &response);
+  ASSERT_TRUE(status.ok()) << status.error_message();
+
+  EXPECT_THAT(
+      response.packages(),
+      UnorderedElementsAre(
+          AllOf(Property(&Package::name, "pkgfile-git"),
+                Property(&Package::maintainers,
+                         UnorderedElementsAre("falconindy"))),
+          AllOf(Property(&Package::name, "pacman-git"),
+                Property(&Package::maintainers,
+                         UnorderedElementsAre("falconindy", "dreisner")))));
+}
+
+TEST_F(ServiceImplTest, LookupByGroup) {
+  std::vector<Package> packages;
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pkgfile-git");
+    p.add_maintainers("falconindy");
+    p.add_groups("a");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pacman-git");
+    p.set_pkgbase("pacman");
+    p.add_groups("a");
+    p.add_groups("b");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pacman-extraponies-git");
+    p.set_pkgbase("pacman");
+    p.add_groups("b");
+  }
+  auto service = BuildService(packages);
+
+  LookupRequest request;
+  LookupResponse response;
+
+  request.set_lookup_by(LookupRequest::LOOKUPBY_GROUP);
+  request.add_names("a");
+  FillFieldMask(request.mutable_options(), {"name", "groups"});
+
+  auto status = service->Lookup(request, &response);
+  ASSERT_TRUE(status.ok()) << status.error_message();
+
+  EXPECT_THAT(
+      response.packages(),
+      UnorderedElementsAre(
+          AllOf(Property(&Package::name, "pkgfile-git"),
+                Property(&Package::groups, UnorderedElementsAre("a"))),
+          AllOf(Property(&Package::name, "pacman-git"),
+                Property(&Package::groups, UnorderedElementsAre("a", "b")))));
+}
+
+TEST_F(ServiceImplTest, LookupByKeyword) {
+  std::vector<Package> packages;
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pkgfile-git");
+    p.add_keywords("alpm");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pacman-git");
+    p.add_keywords("alpm");
+    p.add_keywords("ponies");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pacman-extraponies-git");
+    p.add_keywords("ponies");
+  }
+  auto service = BuildService(packages);
+
+  LookupRequest request;
+  LookupResponse response;
+
+  request.set_lookup_by(LookupRequest::LOOKUPBY_KEYWORD);
+  request.add_names("alpm");
+  FillFieldMask(request.mutable_options(), {"name", "keywords"});
+
+  auto status = service->Lookup(request, &response);
+  ASSERT_TRUE(status.ok()) << status.error_message();
+
+  EXPECT_THAT(
+      response.packages(),
+      UnorderedElementsAre(
+          AllOf(Property(&Package::name, "pkgfile-git"),
+                Property(&Package::keywords, UnorderedElementsAre("alpm"))),
+          AllOf(Property(&Package::name, "pacman-git"),
+                Property(&Package::keywords,
+                         UnorderedElementsAre("alpm", "ponies")))));
+}
+
+TEST_F(ServiceImplTest, LookupByDepends) {
+  std::vector<Package> packages;
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pkgfile-git");
+    p.add_depends("alpm");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pacman-git");
+    p.add_depends("alpm");
+    p.add_depends("ponies");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pacman-extraponies-git");
+    p.add_depends("ponies");
+  }
+  auto service = BuildService(packages);
+
+  LookupRequest request;
+  LookupResponse response;
+
+  request.set_lookup_by(LookupRequest::LOOKUPBY_DEPENDS);
+  request.add_names("alpm");
+  FillFieldMask(request.mutable_options(), {"name", "depends"});
+
+  auto status = service->Lookup(request, &response);
+  ASSERT_TRUE(status.ok()) << status.error_message();
+
+  EXPECT_THAT(
+      response.packages(),
+      UnorderedElementsAre(
+          AllOf(Property(&Package::name, "pkgfile-git"),
+                Property(&Package::depends, UnorderedElementsAre("alpm"))),
+          AllOf(Property(&Package::name, "pacman-git"),
+                Property(&Package::depends,
+                         UnorderedElementsAre("alpm", "ponies")))));
+}
+
+TEST_F(ServiceImplTest, LookupByMakedepends) {
+  std::vector<Package> packages;
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pkgfile-git");
+    p.add_makedepends("alpm");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pacman-git");
+    p.add_makedepends("alpm");
+    p.add_makedepends("ponies");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pacman-extraponies-git");
+    p.add_makedepends("ponies");
+  }
+  auto service = BuildService(packages);
+
+  LookupRequest request;
+  LookupResponse response;
+
+  request.set_lookup_by(LookupRequest::LOOKUPBY_MAKEDEPENDS);
+  request.add_names("alpm");
+  FillFieldMask(request.mutable_options(), {"name", "makedepends"});
+
+  auto status = service->Lookup(request, &response);
+  ASSERT_TRUE(status.ok()) << status.error_message();
+
+  EXPECT_THAT(
+      response.packages(),
+      UnorderedElementsAre(
+          AllOf(Property(&Package::name, "pkgfile-git"),
+                Property(&Package::makedepends, UnorderedElementsAre("alpm"))),
+          AllOf(Property(&Package::name, "pacman-git"),
+                Property(&Package::makedepends,
+                         UnorderedElementsAre("alpm", "ponies")))));
+}
+
+TEST_F(ServiceImplTest, LookupByCheckdepends) {
+  std::vector<Package> packages;
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pkgfile-git");
+    p.add_checkdepends("alpm");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pacman-git");
+    p.add_checkdepends("alpm");
+    p.add_checkdepends("ponies");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pacman-extraponies-git");
+    p.add_checkdepends("ponies");
+  }
+  auto service = BuildService(packages);
+
+  LookupRequest request;
+  LookupResponse response;
+
+  request.set_lookup_by(LookupRequest::LOOKUPBY_CHECKDEPENDS);
+  request.add_names("alpm");
+  FillFieldMask(request.mutable_options(), {"name", "checkdepends"});
+
+  auto status = service->Lookup(request, &response);
+  ASSERT_TRUE(status.ok()) << status.error_message();
+
+  EXPECT_THAT(
+      response.packages(),
+      UnorderedElementsAre(
+          AllOf(Property(&Package::name, "pkgfile-git"),
+                Property(&Package::checkdepends, UnorderedElementsAre("alpm"))),
+          AllOf(Property(&Package::name, "pacman-git"),
+                Property(&Package::checkdepends,
+                         UnorderedElementsAre("alpm", "ponies")))));
+}
+
+TEST_F(ServiceImplTest, LookupByOptdepends) {
+  std::vector<Package> packages;
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pkgfile-git");
+    p.add_optdepends("alpm");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pacman-git");
+    p.add_optdepends("alpm");
+    p.add_optdepends("ponies");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pacman-extraponies-git");
+    p.add_optdepends("ponies");
+  }
+  auto service = BuildService(packages);
+
+  LookupRequest request;
+  LookupResponse response;
+
+  request.set_lookup_by(LookupRequest::LOOKUPBY_OPTDEPENDS);
+  request.add_names("alpm");
+  FillFieldMask(request.mutable_options(), {"name", "optdepends"});
+
+  auto status = service->Lookup(request, &response);
+  ASSERT_TRUE(status.ok()) << status.error_message();
+
+  EXPECT_THAT(
+      response.packages(),
+      UnorderedElementsAre(
+          AllOf(Property(&Package::name, "pkgfile-git"),
+                Property(&Package::optdepends, UnorderedElementsAre("alpm"))),
+          AllOf(Property(&Package::name, "pacman-git"),
+                Property(&Package::optdepends,
+                         UnorderedElementsAre("alpm", "ponies")))));
 }
 
 TEST_F(ServiceImplTest, LookupIsCaseInsensitive) {
@@ -211,8 +528,7 @@ TEST_F(ServiceImplTest, LookupIsCaseInsensitive) {
   request.set_lookup_by(LookupRequest::LOOKUPBY_NAME);
   request.add_names("EXPAC-git");
   request.add_names("auracle-GIT");
-
-  FillAllFieldsMask(request.mutable_options());
+  FillFieldMask(request.mutable_options(), {"name"});
 
   auto status = service->Lookup(request, &response);
   ASSERT_TRUE(status.ok()) << status.error_message();
@@ -220,6 +536,17 @@ TEST_F(ServiceImplTest, LookupIsCaseInsensitive) {
   EXPECT_THAT(response.packages(),
               UnorderedElementsAre(Property(&Package::name, "expac-git"),
                                    Property(&Package::name, "auracle-git")));
+}
+
+TEST_F(ServiceImplTest, LookupByUnknownBy) {
+  auto service = BuildService({});
+
+  LookupRequest request;
+  LookupResponse response;
+
+  request.set_lookup_by(LookupRequest::LOOKUPBY_UNKNOWN);
+  auto status = service->Lookup(request, &response);
+  EXPECT_EQ(status.error_code(), grpc::StatusCode::UNIMPLEMENTED);
 }
 
 TEST_F(ServiceImplTest, SearchByName) {
@@ -271,8 +598,7 @@ TEST_F(ServiceImplTest, SearchByName) {
   request.set_search_by(SearchRequest::SEARCHBY_NAME);
   request.set_search_logic(SearchRequest::SEARCHLOGIC_DISJUNCTIVE);
   request.add_terms("exp*");
-
-  FillAllFieldsMask(request.mutable_options());
+  FillFieldMask(request.mutable_options(), {"name"});
 
   auto status = service->Search(request, &response);
   ASSERT_TRUE(status.ok()) << status.error_message();
@@ -330,8 +656,7 @@ TEST_F(ServiceImplTest, SearchByNameIsCaseInsensitive) {
   request.set_search_by(SearchRequest::SEARCHBY_NAME);
   request.set_search_logic(SearchRequest::SEARCHLOGIC_DISJUNCTIVE);
   request.add_terms("eXP*");
-
-  FillAllFieldsMask(request.mutable_options());
+  FillFieldMask(request.mutable_options(), {"name"});
 
   auto status = service->Search(request, &response);
   ASSERT_TRUE(status.ok()) << status.error_message();
@@ -389,8 +714,7 @@ TEST_F(ServiceImplTest, SearchByNameDesc) {
   request.set_search_by(SearchRequest::SEARCHBY_NAME_DESC);
   request.set_search_logic(SearchRequest::SEARCHLOGIC_DISJUNCTIVE);
   request.add_terms("*PACMAN*");
-
-  FillAllFieldsMask(request.mutable_options());
+  FillFieldMask(request.mutable_options(), {"name"});
 
   auto status = service->Search(request, &response);
   ASSERT_TRUE(status.ok()) << status.error_message();
@@ -401,6 +725,28 @@ TEST_F(ServiceImplTest, SearchByNameDesc) {
                            Property(&Package::name, "pkgfile-git"),
                            Property(&Package::name, "pacman-git"),
                            Property(&Package::name, "pacman-extraponies-git")));
+}
+
+TEST_F(ServiceImplTest, SearchByUnknownBy) {
+  auto service = BuildService({});
+
+  SearchRequest request;
+  SearchResponse response;
+
+  request.set_search_by(SearchRequest::SEARCHBY_UNKNOWN);
+  auto status = service->Search(request, &response);
+  EXPECT_EQ(status.error_code(), grpc::StatusCode::UNIMPLEMENTED);
+}
+
+TEST_F(ServiceImplTest, SearchByUnknownLogic) {
+  auto service = BuildService({});
+
+  SearchRequest request;
+  SearchResponse response;
+
+  request.set_search_logic(SearchRequest::SEARCHLOGIC_UNKNOWN);
+  auto status = service->Search(request, &response);
+  EXPECT_EQ(status.error_code(), grpc::StatusCode::UNIMPLEMENTED);
 }
 
 TEST_F(ServiceImplTest, SearchByNameDescConjunctive) {
@@ -453,8 +799,7 @@ TEST_F(ServiceImplTest, SearchByNameDescConjunctive) {
   request.set_search_logic(SearchRequest::SEARCHLOGIC_CONJUNCTIVE);
   request.add_terms("*pacman*");
   request.add_terms("*metadata*");
-
-  FillAllFieldsMask(request.mutable_options());
+  FillFieldMask(request.mutable_options(), {"name"});
 
   auto status = service->Search(request, &response);
   ASSERT_TRUE(status.ok()) << status.error_message();
@@ -513,13 +858,9 @@ TEST_F(ServiceImplTest, SearchWithFieldMask) {
   request.set_search_logic(SearchRequest::SEARCHLOGIC_DISJUNCTIVE);
   request.add_terms("expac-*");
 
-  std::vector<std::string> expected_fields{"name", "description", "pkgbase",
-                                           "pkgver"};
-
-  auto mask = request.mutable_options()->mutable_package_field_mask();
-  for (const auto& field : expected_fields) {
-    mask->add_paths(field);
-  }
+  const std::vector<std::string> expected_fields{"name", "description",
+                                                 "pkgbase", "pkgver"};
+  FillFieldMask(request.mutable_options(), expected_fields);
 
   auto status = service->Search(request, &response);
   ASSERT_TRUE(status.ok()) << status.error_message();
@@ -577,8 +918,7 @@ TEST_F(ServiceImplTest, ResolveUnversioned) {
 
   request.add_depstrings("pacman");
   request.add_depstrings("pkgfile-git");
-
-  FillAllFieldsMask(request.mutable_options());
+  FillFieldMask(request.mutable_options(), {"name"});
 
   auto status = service->Resolve(request, &response);
   ASSERT_TRUE(status.ok()) << status.error_message();
@@ -648,8 +988,7 @@ TEST_F(ServiceImplTest, ResolveVersioned) {
 
   request.add_depstrings("pacman>5");
   request.add_depstrings("expac<11");
-
-  FillAllFieldsMask(request.mutable_options());
+  FillFieldMask(request.mutable_options(), {"name"});
 
   auto status = service->Resolve(request, &response);
   ASSERT_TRUE(status.ok()) << status.error_message();
