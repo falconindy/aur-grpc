@@ -11,7 +11,7 @@ class Storage {
 
   virtual bool Get(const std::string& key, std::string* value) const = 0;
 
-  virtual std::vector<std::string> List(const std::string& pattern) const = 0;
+  virtual std::vector<std::string> List() const = 0;
 };
 
 }  // namespace aur_storage

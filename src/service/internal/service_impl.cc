@@ -257,7 +257,7 @@ void ServiceImpl::InMemoryDB::LoadPackages(
     const aur_storage::Storage* storage) {
   const absl::Time start = absl::Now();
 
-  const std::vector<std::string> names = storage->List("*");
+  const std::vector<std::string> names = storage->List();
   packages_.reserve(names.size());
   for (const auto& name : names) {
     std::string s;

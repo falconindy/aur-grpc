@@ -13,7 +13,7 @@ class FilesystemStorage : public Storage {
 
   bool Get(const std::string& key, std::string* value) const override;
 
-  std::vector<std::string> List(const std::string& pattern) const override;
+  std::vector<std::string> List() const override;
 
  private:
   std::filesystem::path root_;
