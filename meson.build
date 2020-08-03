@@ -212,7 +212,6 @@ test(
       src/service/internal/service_impl_test.cc
       src/service/internal/package_index_test.cc
       src/service/internal/parsed_dependency_test.cc
-      src/storage/inmemory_storage.hh src/storage/inmemory_storage.cc
     '''.split()),
     include_directories : [
       'src'

@@ -7,7 +7,7 @@
 #include "google/protobuf/util/field_mask_util.h"
 #include "gtest/gtest.h"
 #include "storage/file_io.hh"
-#include "storage/inmemory_storage.hh"
+#include "storage/filesystem_storage.hh"
 
 namespace fs = std::filesystem;
 
@@ -19,7 +19,7 @@ using aur_internal::ResolveResponse;
 using aur_internal::SearchRequest;
 using aur_internal::SearchResponse;
 using aur_internal::ServiceImpl;
-using aur_storage::InMemoryStorage;
+using aur_storage::FilesystemStorage;
 using testing::AllOf;
 using testing::Property;
 using testing::UnorderedElementsAre;
@@ -54,6 +54,31 @@ void FillAllFieldsMask(aur_internal::RequestOptions* options) {
       google::protobuf::util::FieldMaskUtil::GetFieldMaskForAllFields<
           aur_internal::Package>();
 }
+
+class TemporaryDirectory {
+ public:
+  TemporaryDirectory() {
+    Create(testing::UnitTest::GetInstance()->current_test_info()->name());
+  }
+  ~TemporaryDirectory() { std::filesystem::remove_all(tempdir_); }
+
+  const fs::path& dirpath() const { return tempdir_; }
+
+ private:
+  void Create(std::string_view designator) {
+    const char* tmpdir = getenv("TMPDIR");
+    if (tmpdir == nullptr) {
+      tmpdir = "/tmp";
+    }
+
+    std::string tmpdir_template =
+        absl::StrCat(tmpdir, "/", designator, ".XXXXXX");
+
+    tempdir_ = mkdtemp(tmpdir_template.data());
+  }
+
+  std::filesystem::path tempdir_;
+};
 
 class ServiceImplTest : public testing::Test {
  public:
@@ -125,10 +150,11 @@ class ServiceImplTest : public testing::Test {
   }
 
   void AddPackage(const Package& p) {
-    storage_.Add(p.name(), p.SerializeAsString());
+    aur_storage::SetBinaryProto(std::string(tempdir_.dirpath() / p.name()), p);
   }
 
-  InMemoryStorage storage_;
+  TemporaryDirectory tempdir_;
+  FilesystemStorage storage_{tempdir_.dirpath()};
   std::unique_ptr<ServiceImpl> service_;
 };
 
