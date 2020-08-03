@@ -90,8 +90,9 @@ aur_internal::SearchRequest ToInternalRequest(const SearchRequest& request) {
   aur_internal::SearchRequest internal;
 
   if (request.options().has_package_field_mask()) {
-    *internal.mutable_options()->mutable_package_field_mask() =
-        request.options().package_field_mask();
+    proto::util::FieldMaskUtil::ToCanonicalForm(
+        request.options().package_field_mask(),
+        internal.mutable_options()->mutable_package_field_mask());
   } else {
     auto default_mask =
         internal.mutable_options()->mutable_package_field_mask();
@@ -141,8 +142,9 @@ aur_internal::LookupRequest ToInternalRequest(const LookupRequest& request) {
   aur_internal::LookupRequest internal;
 
   if (request.options().has_package_field_mask()) {
-    *internal.mutable_options()->mutable_package_field_mask() =
-        request.options().package_field_mask();
+    proto::util::FieldMaskUtil::ToCanonicalForm(
+        request.options().package_field_mask(),
+        internal.mutable_options()->mutable_package_field_mask());
   } else {
     *internal.mutable_options()->mutable_package_field_mask() =
         proto::util::FieldMaskUtil::GetFieldMaskForAllFields<Package>();
@@ -196,8 +198,9 @@ aur_internal::ResolveRequest ToInternalRequest(const ResolveRequest& request) {
   aur_internal::ResolveRequest internal;
 
   if (request.options().has_package_field_mask()) {
-    *internal.mutable_options()->mutable_package_field_mask() =
-        request.options().package_field_mask();
+    proto::util::FieldMaskUtil::ToCanonicalForm(
+        request.options().package_field_mask(),
+        internal.mutable_options()->mutable_package_field_mask());
   } else {
     *internal.mutable_options()->mutable_package_field_mask() =
         proto::util::FieldMaskUtil::GetFieldMaskForAllFields<Package>();
