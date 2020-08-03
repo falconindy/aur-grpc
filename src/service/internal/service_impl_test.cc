@@ -81,84 +81,68 @@ class TemporaryDirectory {
 };
 
 class ServiceImplTest : public testing::Test {
- public:
-  ServiceImplTest() {
-    PopulateDB();
-    service_ = std::make_unique<ServiceImpl>(&storage_);
-  }
-
  protected:
-  grpc::Status Lookup(const LookupRequest& request, LookupResponse* response) {
-    return service_->Lookup(request, response);
-  }
+  std::unique_ptr<ServiceImpl> BuildService(
+      const std::vector<Package>& packages) {
+    for (const auto& p : packages) {
+      AddPackage(p);
+    }
 
-  grpc::Status Search(const SearchRequest& request, SearchResponse* response) {
-    return service_->Search(request, response);
-  }
-
-  grpc::Status Resolve(const ResolveRequest& request,
-                       ResolveResponse* response) {
-    return service_->Resolve(request, response);
+    return std::make_unique<ServiceImpl>(&storage_);
   }
 
  private:
-  void PopulateDB() {
-    {
-      Package p;
-      p.set_name("expac-git");
-      p.set_description("pacman database extraction utility");
-      p.set_pkgbase("expac");
-      p.set_pkgver("10.1");
-      p.add_provides("expac=10");
-      p.add_architectures("x86_64");
-      AddPackage(p);
-    }
-    {
-      Package p;
-      p.set_name("auracle-git");
-      p.set_description("A flexible client for the AUR");
-      p.set_pkgbase("auracle");
-      p.set_pkgver("0");
-      AddPackage(p);
-    }
-    {
-      Package p;
-      p.set_name("pkgfile-git");
-      p.set_description("a pacman .files metadata explorer");
-      p.set_pkgbase("pkgfile");
-      p.set_pkgver("32");
-      AddPackage(p);
-    }
-    {
-      Package p;
-      p.set_name("pacman-git");
-      p.set_description("A library-based package manager");
-      p.set_pkgbase("pacman");
-      p.set_pkgver("6.0.0");
-      p.add_provides("pacman=6.0.0");
-      AddPackage(p);
-    }
-    {
-      Package p;
-      p.set_name("pacman-extraponies-git");
-      p.set_description("A library-based package manager with more ponies");
-      p.set_pkgbase("pacman");
-      p.set_pkgver("6.0.0");
-      p.add_provides("pacman=6.0.0");
-      AddPackage(p);
-    }
-  }
-
   void AddPackage(const Package& p) {
     aur_storage::SetBinaryProto(std::string(tempdir_.dirpath() / p.name()), p);
   }
 
   TemporaryDirectory tempdir_;
   FilesystemStorage storage_{tempdir_.dirpath()};
-  std::unique_ptr<ServiceImpl> service_;
 };
 
 TEST_F(ServiceImplTest, Lookup) {
+  std::vector<Package> packages;
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("expac-git");
+    p.set_description("pacman database extraction utility");
+    p.set_pkgbase("expac");
+    p.set_pkgver("10.1");
+    p.add_provides("expac=10");
+    p.add_architectures("x86_64");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("auracle-git");
+    p.set_description("A flexible client for the AUR");
+    p.set_pkgbase("auracle");
+    p.set_pkgver("0");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pkgfile-git");
+    p.set_description("a pacman .files metadata explorer");
+    p.set_pkgbase("pkgfile");
+    p.set_pkgver("32");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pacman-git");
+    p.set_description("A library-based package manager");
+    p.set_pkgbase("pacman");
+    p.set_pkgver("6.0.0");
+    p.add_provides("pacman=6.0.0");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pacman-extraponies-git");
+    p.set_description("A library-based package manager with more ponies");
+    p.set_pkgbase("pacman");
+    p.set_pkgver("6.0.0");
+    p.add_provides("pacman=6.0.0");
+  }
+  auto service = BuildService(packages);
+
   LookupRequest request;
   LookupResponse response;
 
@@ -169,7 +153,7 @@ TEST_F(ServiceImplTest, Lookup) {
 
   FillAllFieldsMask(request.mutable_options());
 
-  auto status = Lookup(request, &response);
+  auto status = service->Lookup(request, &response);
   ASSERT_TRUE(status.ok()) << status.error_message();
 
   EXPECT_THAT(response.not_found_names(), UnorderedElementsAre("notfound"));
@@ -179,6 +163,48 @@ TEST_F(ServiceImplTest, Lookup) {
 }
 
 TEST_F(ServiceImplTest, LookupIsCaseInsensitive) {
+  std::vector<Package> packages;
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("expac-git");
+    p.set_description("pacman database extraction utility");
+    p.set_pkgbase("expac");
+    p.set_pkgver("10.1");
+    p.add_provides("expac=10");
+    p.add_architectures("x86_64");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("auracle-git");
+    p.set_description("A flexible client for the AUR");
+    p.set_pkgbase("auracle");
+    p.set_pkgver("0");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pkgfile-git");
+    p.set_description("a pacman .files metadata explorer");
+    p.set_pkgbase("pkgfile");
+    p.set_pkgver("32");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pacman-git");
+    p.set_description("A library-based package manager");
+    p.set_pkgbase("pacman");
+    p.set_pkgver("6.0.0");
+    p.add_provides("pacman=6.0.0");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pacman-extraponies-git");
+    p.set_description("A library-based package manager with more ponies");
+    p.set_pkgbase("pacman");
+    p.set_pkgver("6.0.0");
+    p.add_provides("pacman=6.0.0");
+  }
+  auto service = BuildService(packages);
+
   LookupRequest request;
   LookupResponse response;
 
@@ -188,7 +214,7 @@ TEST_F(ServiceImplTest, LookupIsCaseInsensitive) {
 
   FillAllFieldsMask(request.mutable_options());
 
-  auto status = Lookup(request, &response);
+  auto status = service->Lookup(request, &response);
   ASSERT_TRUE(status.ok()) << status.error_message();
 
   EXPECT_THAT(response.packages(),
@@ -197,6 +223,48 @@ TEST_F(ServiceImplTest, LookupIsCaseInsensitive) {
 }
 
 TEST_F(ServiceImplTest, SearchByName) {
+  std::vector<Package> packages;
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("expac-git");
+    p.set_description("pacman database extraction utility");
+    p.set_pkgbase("expac");
+    p.set_pkgver("10.1");
+    p.add_provides("expac=10");
+    p.add_architectures("x86_64");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("auracle-git");
+    p.set_description("A flexible client for the AUR");
+    p.set_pkgbase("auracle");
+    p.set_pkgver("0");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pkgfile-git");
+    p.set_description("a pacman .files metadata explorer");
+    p.set_pkgbase("pkgfile");
+    p.set_pkgver("32");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pacman-git");
+    p.set_description("A library-based package manager");
+    p.set_pkgbase("pacman");
+    p.set_pkgver("6.0.0");
+    p.add_provides("pacman=6.0.0");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pacman-extraponies-git");
+    p.set_description("A library-based package manager with more ponies");
+    p.set_pkgbase("pacman");
+    p.set_pkgver("6.0.0");
+    p.add_provides("pacman=6.0.0");
+  }
+  auto service = BuildService(packages);
+
   SearchRequest request;
   SearchResponse response;
 
@@ -206,7 +274,7 @@ TEST_F(ServiceImplTest, SearchByName) {
 
   FillAllFieldsMask(request.mutable_options());
 
-  auto status = Search(request, &response);
+  auto status = service->Search(request, &response);
   ASSERT_TRUE(status.ok()) << status.error_message();
 
   EXPECT_THAT(response.packages(),
@@ -214,6 +282,48 @@ TEST_F(ServiceImplTest, SearchByName) {
 }
 
 TEST_F(ServiceImplTest, SearchByNameIsCaseInsensitive) {
+  std::vector<Package> packages;
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("expac-git");
+    p.set_description("pacman database extraction utility");
+    p.set_pkgbase("expac");
+    p.set_pkgver("10.1");
+    p.add_provides("expac=10");
+    p.add_architectures("x86_64");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("auracle-git");
+    p.set_description("A flexible client for the AUR");
+    p.set_pkgbase("auracle");
+    p.set_pkgver("0");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pkgfile-git");
+    p.set_description("a pacman .files metadata explorer");
+    p.set_pkgbase("pkgfile");
+    p.set_pkgver("32");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pacman-git");
+    p.set_description("A library-based package manager");
+    p.set_pkgbase("pacman");
+    p.set_pkgver("6.0.0");
+    p.add_provides("pacman=6.0.0");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pacman-extraponies-git");
+    p.set_description("A library-based package manager with more ponies");
+    p.set_pkgbase("pacman");
+    p.set_pkgver("6.0.0");
+    p.add_provides("pacman=6.0.0");
+  }
+  auto service = BuildService(packages);
+
   SearchRequest request;
   SearchResponse response;
 
@@ -223,7 +333,7 @@ TEST_F(ServiceImplTest, SearchByNameIsCaseInsensitive) {
 
   FillAllFieldsMask(request.mutable_options());
 
-  auto status = Search(request, &response);
+  auto status = service->Search(request, &response);
   ASSERT_TRUE(status.ok()) << status.error_message();
 
   EXPECT_THAT(response.packages(),
@@ -231,6 +341,48 @@ TEST_F(ServiceImplTest, SearchByNameIsCaseInsensitive) {
 }
 
 TEST_F(ServiceImplTest, SearchByNameDesc) {
+  std::vector<Package> packages;
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("expac-git");
+    p.set_description("pacman database extraction utility");
+    p.set_pkgbase("expac");
+    p.set_pkgver("10.1");
+    p.add_provides("expac=10");
+    p.add_architectures("x86_64");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("auracle-git");
+    p.set_description("A flexible client for the AUR");
+    p.set_pkgbase("auracle");
+    p.set_pkgver("0");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pkgfile-git");
+    p.set_description("a pacman .files metadata explorer");
+    p.set_pkgbase("pkgfile");
+    p.set_pkgver("32");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pacman-git");
+    p.set_description("A library-based package manager");
+    p.set_pkgbase("pacman");
+    p.set_pkgver("6.0.0");
+    p.add_provides("pacman=6.0.0");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pacman-extraponies-git");
+    p.set_description("A library-based package manager with more ponies");
+    p.set_pkgbase("pacman");
+    p.set_pkgver("6.0.0");
+    p.add_provides("pacman=6.0.0");
+  }
+  auto service = BuildService(packages);
+
   SearchRequest request;
   SearchResponse response;
 
@@ -240,7 +392,7 @@ TEST_F(ServiceImplTest, SearchByNameDesc) {
 
   FillAllFieldsMask(request.mutable_options());
 
-  auto status = Search(request, &response);
+  auto status = service->Search(request, &response);
   ASSERT_TRUE(status.ok()) << status.error_message();
 
   EXPECT_THAT(
@@ -252,6 +404,48 @@ TEST_F(ServiceImplTest, SearchByNameDesc) {
 }
 
 TEST_F(ServiceImplTest, SearchByNameDescConjunctive) {
+  std::vector<Package> packages;
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("expac-git");
+    p.set_description("pacman database extraction utility");
+    p.set_pkgbase("expac");
+    p.set_pkgver("10.1");
+    p.add_provides("expac=10");
+    p.add_architectures("x86_64");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("auracle-git");
+    p.set_description("A flexible client for the AUR");
+    p.set_pkgbase("auracle");
+    p.set_pkgver("0");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pkgfile-git");
+    p.set_description("a pacman .files metadata explorer");
+    p.set_pkgbase("pkgfile");
+    p.set_pkgver("32");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pacman-git");
+    p.set_description("A library-based package manager");
+    p.set_pkgbase("pacman");
+    p.set_pkgver("6.0.0");
+    p.add_provides("pacman=6.0.0");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pacman-extraponies-git");
+    p.set_description("A library-based package manager with more ponies");
+    p.set_pkgbase("pacman");
+    p.set_pkgver("6.0.0");
+    p.add_provides("pacman=6.0.0");
+  }
+  auto service = BuildService(packages);
+
   SearchRequest request;
   SearchResponse response;
 
@@ -262,7 +456,7 @@ TEST_F(ServiceImplTest, SearchByNameDescConjunctive) {
 
   FillAllFieldsMask(request.mutable_options());
 
-  auto status = Search(request, &response);
+  auto status = service->Search(request, &response);
   ASSERT_TRUE(status.ok()) << status.error_message();
 
   EXPECT_THAT(response.packages(),
@@ -270,6 +464,48 @@ TEST_F(ServiceImplTest, SearchByNameDescConjunctive) {
 }
 
 TEST_F(ServiceImplTest, SearchWithFieldMask) {
+  std::vector<Package> packages;
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("expac-git");
+    p.set_description("pacman database extraction utility");
+    p.set_pkgbase("expac");
+    p.set_pkgver("10.1");
+    p.add_provides("expac=10");
+    p.add_architectures("x86_64");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("auracle-git");
+    p.set_description("A flexible client for the AUR");
+    p.set_pkgbase("auracle");
+    p.set_pkgver("0");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pkgfile-git");
+    p.set_description("a pacman .files metadata explorer");
+    p.set_pkgbase("pkgfile");
+    p.set_pkgver("32");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pacman-git");
+    p.set_description("A library-based package manager");
+    p.set_pkgbase("pacman");
+    p.set_pkgver("6.0.0");
+    p.add_provides("pacman=6.0.0");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pacman-extraponies-git");
+    p.set_description("A library-based package manager with more ponies");
+    p.set_pkgbase("pacman");
+    p.set_pkgver("6.0.0");
+    p.add_provides("pacman=6.0.0");
+  }
+  auto service = BuildService(packages);
+
   SearchRequest request;
   SearchResponse response;
 
@@ -285,7 +521,7 @@ TEST_F(ServiceImplTest, SearchWithFieldMask) {
     mask->add_paths(field);
   }
 
-  auto status = Search(request, &response);
+  auto status = service->Search(request, &response);
   ASSERT_TRUE(status.ok()) << status.error_message();
 
   ASSERT_EQ(1, response.packages_size());
@@ -294,6 +530,48 @@ TEST_F(ServiceImplTest, SearchWithFieldMask) {
 }
 
 TEST_F(ServiceImplTest, ResolveUnversioned) {
+  std::vector<Package> packages;
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("expac-git");
+    p.set_description("pacman database extraction utility");
+    p.set_pkgbase("expac");
+    p.set_pkgver("10.1");
+    p.add_provides("expac=10");
+    p.add_architectures("x86_64");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("auracle-git");
+    p.set_description("A flexible client for the AUR");
+    p.set_pkgbase("auracle");
+    p.set_pkgver("0");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pkgfile-git");
+    p.set_description("a pacman .files metadata explorer");
+    p.set_pkgbase("pkgfile");
+    p.set_pkgver("32");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pacman-git");
+    p.set_description("A library-based package manager");
+    p.set_pkgbase("pacman");
+    p.set_pkgver("6.0.0");
+    p.add_provides("pacman=6.0.0");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pacman-extraponies-git");
+    p.set_description("A library-based package manager with more ponies");
+    p.set_pkgbase("pacman");
+    p.set_pkgver("6.0.0");
+    p.add_provides("pacman=6.0.0");
+  }
+  auto service = BuildService(packages);
+
   ResolveRequest request;
   ResolveResponse response;
 
@@ -302,7 +580,7 @@ TEST_F(ServiceImplTest, ResolveUnversioned) {
 
   FillAllFieldsMask(request.mutable_options());
 
-  auto status = Resolve(request, &response);
+  auto status = service->Resolve(request, &response);
   ASSERT_TRUE(status.ok()) << status.error_message();
 
   EXPECT_THAT(
@@ -323,6 +601,48 @@ TEST_F(ServiceImplTest, ResolveUnversioned) {
 }
 
 TEST_F(ServiceImplTest, ResolveVersioned) {
+  std::vector<Package> packages;
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("expac-git");
+    p.set_description("pacman database extraction utility");
+    p.set_pkgbase("expac");
+    p.set_pkgver("10.1");
+    p.add_provides("expac=10");
+    p.add_architectures("x86_64");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("auracle-git");
+    p.set_description("A flexible client for the AUR");
+    p.set_pkgbase("auracle");
+    p.set_pkgver("0");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pkgfile-git");
+    p.set_description("a pacman .files metadata explorer");
+    p.set_pkgbase("pkgfile");
+    p.set_pkgver("32");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pacman-git");
+    p.set_description("A library-based package manager");
+    p.set_pkgbase("pacman");
+    p.set_pkgver("6.0.0");
+    p.add_provides("pacman=6.0.0");
+  }
+  {
+    auto& p = packages.emplace_back();
+    p.set_name("pacman-extraponies-git");
+    p.set_description("A library-based package manager with more ponies");
+    p.set_pkgbase("pacman");
+    p.set_pkgver("6.0.0");
+    p.add_provides("pacman=6.0.0");
+  }
+  auto service = BuildService(packages);
+
   ResolveRequest request;
   ResolveResponse response;
 
@@ -331,7 +651,7 @@ TEST_F(ServiceImplTest, ResolveVersioned) {
 
   FillAllFieldsMask(request.mutable_options());
 
-  auto status = Resolve(request, &response);
+  auto status = service->Resolve(request, &response);
   ASSERT_TRUE(status.ok()) << status.error_message();
 
   EXPECT_THAT(response.resolved_packages(),
