@@ -95,7 +95,7 @@ class ServiceImplTest : public testing::Test {
 
  private:
   void AddPackage(const Package& p) {
-    aur_storage::SetBinaryProto(std::string(tempdir_.dirpath() / p.name()), p);
+    aur_storage::SetBinaryProto(tempdir_.dirpath() / p.name(), p);
   }
 
   TemporaryDirectory tempdir_;
