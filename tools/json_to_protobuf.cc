@@ -13,6 +13,10 @@
 #include "legacy.pb.h"
 #include "storage/file_io.hh"
 
+namespace proto = google::protobuf;
+
+namespace {
+
 aur_internal::Package LegacyToInternalPackage(
     const aur_legacy::Package& legacy) {
   aur_internal::Package package;
@@ -32,7 +36,7 @@ aur_internal::Package LegacyToInternalPackage(
     package.add_maintainers(legacy.maintainer());
   }
 
-  auto* inserter = google::protobuf::RepeatedPtrFieldBackInserter<std::string>;
+  auto* inserter = proto::RepeatedPtrFieldBackInserter<std::string>;
   absl::c_copy(legacy.depends(), inserter(package.mutable_depends()));
   absl::c_copy(legacy.makedepends(), inserter(package.mutable_makedepends()));
   absl::c_copy(legacy.checkdepends(), inserter(package.mutable_checkdepends()));
@@ -47,25 +51,25 @@ aur_internal::Package LegacyToInternalPackage(
   return package;
 }
 
+}  // namespace
+
 int main(int argc, char** argv) {
   if (argc < 3) {
-    fprintf(stderr, "usage: %s inputfile dbdir\n",
-            program_invocation_short_name);
+    std::cerr << "usage: " << program_invocation_short_name
+              << " inputfile dbdir\n";
     return 42;
   }
 
   std::string json_string;
   if (!aur_storage::ReadFileToString(argv[1], &json_string)) {
-    fprintf(stderr, "error: failed to read file to string: %s\n", argv[1]);
+    std::cerr << "error: failed to read file to string: " << argv[1] << '\n';
     return 1;
   }
 
   aur_legacy::Response response;
-  auto status =
-      google::protobuf::util::JsonStringToMessage(json_string, &response);
+  const auto status = proto::util::JsonStringToMessage(json_string, &response);
   if (!status.ok()) {
-    fprintf(stderr, "JsonStringToMessage failed: %s\n",
-            status.message().as_string().c_str());
+    std::cerr << "JsonStringToMessage failed: " << status.message() << '\n';
     return 1;
   }
 
@@ -73,7 +77,7 @@ int main(int argc, char** argv) {
   for (const auto& result : response.results()) {
     if (!aur_storage::SetBinaryProto(dbroot / result.name(),
                                      LegacyToInternalPackage(result))) {
-      fprintf(stderr, "failed to write result to db\n");
+      std::cerr << "failed to write result to db\n";
     }
   }
 

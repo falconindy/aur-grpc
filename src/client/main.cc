@@ -9,8 +9,8 @@
 namespace {
 
 [[noreturn]] void usage() {
-  printf("%s [-a server_address] command args...\n",
-         program_invocation_short_name);
+  std::cout << program_invocation_short_name
+            << " [-a server_address] command args...\n";
   // clang-format off
   printf(
       "Commands\n"

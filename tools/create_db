@@ -12,7 +12,7 @@ if (( DOWNLOAD )); then
     exit 1
   fi
 
-  mkdir -p db aur_sourcedb
+  mkdir -p aur_sourcedb
 
   log 'fetching packages...'
   mapfile -t pkgs < <(curl -s https://aur.archlinux.org/packages.gz | gzip -cd | grep -v '^#')
@@ -26,6 +26,7 @@ if (( DOWNLOAD )); then
 fi
 
 log 'converting packages...'
+mkdir -p db
 for f in aur_sourcedb/*; do
   build/json_to_protobuf "$f" "$PWD/db" &
 done
