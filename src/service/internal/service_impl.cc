@@ -152,7 +152,8 @@ grpc::Status ServiceImpl::SearchByPredicate(
     const std::shared_ptr<const InMemoryDB>& db,
     const SearchPredicate& predicate, const SearchRequest& request,
     SearchResponse* response) {
-  absl::flat_hash_set<const Package*> results;
+  auto inserter = FieldMaskingBackInserter(
+      request.options().package_field_mask(), response->mutable_packages());
 
   switch (request.search_logic()) {
     case SearchRequest::SEARCHLOGIC_DISJUNCTIVE:
@@ -160,7 +161,7 @@ grpc::Status ServiceImpl::SearchByPredicate(
         if (absl::c_any_of(request.terms(), [&](const std::string& term) {
               return predicate(package, term);
             })) {
-          results.emplace(&package);
+          inserter = &package;
         }
       }
       break;
@@ -169,7 +170,7 @@ grpc::Status ServiceImpl::SearchByPredicate(
         if (absl::c_all_of(request.terms(), [&](const std::string& term) {
               return predicate(package, term);
             })) {
-          results.emplace(&package);
+          inserter = &package;
         }
       }
       break;
@@ -179,11 +180,6 @@ grpc::Status ServiceImpl::SearchByPredicate(
                                        SearchRequest::SearchLogic_Name(
                                            request.search_logic())));
   }
-
-  response->mutable_packages()->Reserve(results.size());
-  absl::c_copy(results,
-               FieldMaskingBackInserter(request.options().package_field_mask(),
-                                        response->mutable_packages()));
 
   return grpc::Status::OK;
 }

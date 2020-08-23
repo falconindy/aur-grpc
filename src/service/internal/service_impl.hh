@@ -37,6 +37,9 @@ class ServiceImpl final {
   void Reload();
 
  private:
+  // InMemoryDB is an indexed, in-memory storage version of a backing store. It
+  // is immutable after construction and changes to the underlying storage will
+  // not be reflected.
   class InMemoryDB final {
    public:
     explicit InMemoryDB(const aur_storage::Storage* storage) {
