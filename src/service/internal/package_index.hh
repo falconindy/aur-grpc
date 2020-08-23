@@ -90,16 +90,4 @@ class PackageIndex final {
   container_type index_;
 };
 
-// Helpers for creating SecondaryValueFn objects.
-PackageIndex::SecondaryValueFn DepstringFieldIndexingAdapter(
-    const google::protobuf::RepeatedPtrField<std::string>& (
-        Package::*depstring_field)() const);
-
-PackageIndex::SecondaryValueFn ScalarFieldIndexingAdapter(
-    const std::string& (Package::*scalar_field)() const);
-
-PackageIndex::SecondaryValueFn RepeatedFieldIndexingAdapter(
-    const google::protobuf::RepeatedPtrField<std::string>& (
-        Package::*repeated_field)() const);
-
 }  // namespace aur_internal
